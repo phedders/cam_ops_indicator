@@ -104,6 +104,7 @@
 	<div id="title"> Camera <span id='titlename'>Indicator</span></div>
 
 	<div id="login"> Who are you?
+		<span id='iamthemaster'>The main controller</span>
 		<span id='iam1'>Camera operator 1</span>
 		<span id='iam2'>Camera operator 2</span>
 		<span id='iam3'>Camera operator 3</span>
@@ -137,13 +138,14 @@
 			case '4': document.querySelector('#titlename').innerHTML = vars['camera']; break;
 			case '5': document.querySelector('#titlename').innerHTML = vars['camera']; break;
 			case 'master': document.querySelector('#titlename').innerHTML = 'Master'; document.querySelector('#master').style.display = 'block';
-
+		          console.log("Setting up clock")
+		          setInterval( function() { websocket.send(JSON.stringify( { type:'footer', data: "Master time is: " + new Date().toLocaleTimeString() }))}, 1000 );
 			break;
 			case undefined: document.querySelector('#login').style.display = 'block'; break;
 		}
 	}
-	switchVars();
 
+	document.querySelector('#iamthemaster').onclick = function (event) { vars['camera'] = "master"; switchVars(); }
 	document.querySelector('#iam1').onclick = function (event) { vars['camera'] = "1"; switchVars(); }
 	document.querySelector('#iam2').onclick = function (event) { vars['camera'] = "2"; switchVars(); }
 	document.querySelector('#iam3').onclick = function (event) { vars['camera'] = "3"; switchVars(); }
@@ -159,12 +161,7 @@
 	ws_uri += "//" + loc.host.replace(/:.*/, ":6789"); console.log("Connecting to "+ws_uri);
 	var websocket = new WebSocket(ws_uri);
 
-	if (vars['camera'] == 'master') {
-		console.log("Setting up clock")
-		setInterval(
-			function() { websocket.send(JSON.stringify( { type:'footer', data: "Master time is: " + new Date().toLocaleTimeString() }))}, 1000
-		)
-	}
+	switchVars();
 
 	document.querySelector('#setcam1').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '1' })); }
 	document.querySelector('#setcam2').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '2' })); }

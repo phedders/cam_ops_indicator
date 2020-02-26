@@ -5,11 +5,43 @@
 	<title>CameraIndicator</title>
 	<meta charset="UTF-8">
 	<style type="text/css">
+		*,
+		*:before,
+		*:after {
+			box-sizing: border-box;
+		}
+
 		body {
 			font-family: "Courier New", sans-serif;
 			text-align: center;
 			background-color: #444;
+			margin: 0;
+			height: 100%;
+			min-height: 100vh;
+			/* will cover the 100% of viewport */
+			overflow: hidden;
+			# No scroll... display: block;
+			position: relative;
+			padding-bottom: 100px;
 		}
+
+		.footer {
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			width: 80%;
+			margin: 1rem auto;
+			padding: auto;
+			border: 1px solid;
+			background-color: black;
+			color: white;
+			opacity: 0.5;
+			font-size: 2rem;
+			display: flex; ;
+		}
+
+		.footer > div { width:50%;  }
 
 		#login>span,
 		.selector {
@@ -53,15 +85,18 @@
 			color: white;
 			margin: auto;
 			display: none;
-			width:80%;:width;
-			background-color:rgba(0,0,0,0.2);
-	
+			width: 80%;
+			: width;
+			background-color: rgba(0, 0, 0, 0.2);
+
 			;
 		}
-		#master > form > textarea {
-			font-size:1em;
-			width:81%;
-			height:3em;}
+
+		#master>form>textarea {
+			font-size: 1em;
+			width: 81%;
+			height: 3em;
+		}
 	</style>
 </head>
 
@@ -84,11 +119,12 @@
 		<form><textarea id="messageinput"></textarea></form>
 	</div>
 	<div id="message">Message:</div>
-
+	<div class="footer"><div id='footerL'>waiting...</div><div id='footerR'>waiting...</div></div>
 </body>
 
 <script>
 	var vars = {};
+	var dt=new Date().getTime();
 	var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
 		vars[key] = value;
 	});
@@ -100,7 +136,9 @@
 			case '3': document.querySelector('#titlename').innerHTML = vars['camera']; break;
 			case '4': document.querySelector('#titlename').innerHTML = vars['camera']; break;
 			case '5': document.querySelector('#titlename').innerHTML = vars['camera']; break;
-			case 'master': document.querySelector('#titlename').innerHTML = 'Master'; document.querySelector('#master').style.display = 'block'; break;
+			case 'master': document.querySelector('#titlename').innerHTML = 'Master'; document.querySelector('#master').style.display = 'block';
+
+			break;
 			case undefined: document.querySelector('#login').style.display = 'block'; break;
 		}
 	}
@@ -112,7 +150,21 @@
 	document.querySelector('#iam4').onclick = function (event) { vars['camera'] = "4"; switchVars(); }
 	document.querySelector('#iam5').onclick = function (event) { vars['camera'] = "5"; switchVars(); }
 
-	var websocket = new WebSocket("ws://192.168.1.1:6789/");
+	var loc = window.location, new_uri;
+	if (loc.protocol === "https:") {
+		ws_uri = "wss:";
+	} else {
+		ws_uri = "ws:";
+	}
+	ws_uri += "//" + loc.host.replace(/:.*/, ":6789"); console.log("Connecting to "+ws_uri);
+	var websocket = new WebSocket(ws_uri);
+
+	if (vars['camera'] == 'master') {
+		console.log("Setting up clock")
+		setInterval(
+			function() { websocket.send(JSON.stringify( { type:'footer', data: "Master time is: " + new Date().toLocaleTimeString() }))}, 1000
+		)
+	}
 
 	document.querySelector('#setcam1').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '1' })); }
 	document.querySelector('#setcam2').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '2' })); }
@@ -135,6 +187,7 @@
 				} else {
 					document.querySelector('body').style.backgroundColor = '#666';
 				};
+				document.querySelector('#footerL').textContent = "Active op = "+data.data;
 				break
 			case 'messageset':
 				document.querySelector('#message').innerHTML = data.data.replace(/\n/g, "<br/>");
@@ -144,6 +197,8 @@
 				document.querySelector('#message').textContent = '';
 				document.querySelector('#message').style.display = 'none';
 				break;
+				case 'footer': console.log("got footer "+data.data);
+					document.querySelector('#footerR').textContent = data.data; break;
 			default:
 				console.error("Unsupported event", data);
 		}

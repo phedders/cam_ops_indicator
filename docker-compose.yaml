@@ -1,0 +1,9 @@
+version: '2'
+services:
+  cam_ops_indicator:
+    build: .
+    container_name: cam_opts_indicator
+    ports:
+      - 4567:4567
+      - 6789:6789
+    

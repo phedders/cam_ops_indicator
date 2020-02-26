@@ -20,8 +20,6 @@
 			padding: 1rem;
 			margin: 1rem auto;
 			border: medium solid;
-			min-height: 1em;
-			min-width: 1em;
 			width: 80%;
 		}
 
@@ -55,11 +53,14 @@
 			color: white;
 			margin: auto;
 			display: none;
+			width:80%;:width;
+			background-color:rgba(0,0,0,0.2);
+	
 			;
 		}
 		#master > form > textarea {
 			font-size:1em;
-			width:80%;
+			width:81%;
 			height:3em;}
 	</style>
 </head>
@@ -119,7 +120,8 @@
 	document.querySelector('#setcam4').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '4' })); }
 	document.querySelector('#setcam5').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '5' })); }
 	document.querySelector('#messageinput').oninput = function (event) {
-		websocket.send(JSON.stringify({type:'messageset', data:document.querySelector('#messageinput').value}))}
+		websocket.send(JSON.stringify({ type: 'messageset', data: document.querySelector('#messageinput').value }))
+	}
 
 	websocket.onmessage = function (event) {
 		data = JSON.parse(event.data);
@@ -135,7 +137,7 @@
 				};
 				break
 			case 'messageset':
-				document.querySelector('#message').innerHTML = data.data.replace(/\n/g,"<br/>");
+				document.querySelector('#message').innerHTML = data.data.replace(/\n/g, "<br/>");
 				document.querySelector('#message').style.display = 'block';
 				break;
 			case 'messageclear':

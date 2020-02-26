@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>CameraIndicator</title>
+	<meta charset="UTF-8">
+	<style type="text/css">
+		body {
+			font-family: "Courier New", sans-serif;
+			text-align: center;
+			background-color: #444;
+		}
+
+		#login>span,
+		.selector {
+			fonxt-size: 2em;
+			display: flex;
+			justify-content: center;
+			line-height: 1;
+			padding: 1rem;
+			margin: 1rem auto;
+			border: medium solid;
+			min-height: 1em;
+			min-width: 1em;
+			width: 80%;
+		}
+
+		#master {
+			display: none;
+			font-size: 2rem;
+		}
+
+
+		#title {
+			background-color: black;
+			color: white;
+			opacity: 0.5;
+			margin: auto;
+			width: 80%;
+			height: 80%;
+			padding: 3rem;
+			font-size: 4em;
+		}
+
+		#login {
+			font-size: 2rem;
+			color: white;
+			margin: auto;
+			display: none;
+			;
+		}
+		#message {
+			font-size: 3rem;
+			color: white;
+			margin: auto;
+			display: none;
+			;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="title"> Camera <span id='titlename'>Indicator</span></div>
+
+	<div id="login"> Who are you?
+		<span id='iam1'>Camera operator 1</span>
+		<span id='iam2'>Camera operator 2</span>
+		<span id='iam3'>Camera operator 3</span>
+		<span id='iam4'>Camera operator 4</span>
+		<span id='iam5'>Camera operator 5</span>
+	</div>
+	<div id="master">
+		<div class="selector" id="setcam1">Camera 1</div>
+		<div class="selector" id="setcam2">Camera 2</div>
+		<div class="selector" id="setcam3">Camera 3</div>
+		<div class="selector" id="setcam4">Camera 4</div>
+		<div class="selector" id="setcam5">Camera 5</div>
+		<form><textarea id="messageinput"></textarea></form>
+	</div>
+	<div id="message">Message:</div>
+
+</body>
+
+<script>
+	var vars = {};
+	var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+		vars[key] = value;
+	});
+	function switchVars() {
+		document.querySelector('#login').style.display = 'none';
+		switch (vars['camera']) {
+			case '1': document.querySelector('#titlename').innerHTML = vars['camera']; break;
+			case '2': document.querySelector('#titlename').innerHTML = vars['camera']; break;
+			case '3': document.querySelector('#titlename').innerHTML = vars['camera']; break;
+			case '4': document.querySelector('#titlename').innerHTML = vars['camera']; break;
+			case '5': document.querySelector('#titlename').innerHTML = vars['camera']; break;
+			case 'master': document.querySelector('#titlename').innerHTML = 'Master'; document.querySelector('#master').style.display = 'block'; break;
+			case undefined: document.querySelector('#login').style.display = 'block'; break;
+		}
+	}
+	switchVars();
+
+	document.querySelector('#iam1').onclick = function (event) { vars['camera'] = "1"; switchVars(); }
+	document.querySelector('#iam2').onclick = function (event) { vars['camera'] = "2"; switchVars(); }
+	document.querySelector('#iam3').onclick = function (event) { vars['camera'] = "3"; switchVars(); }
+	document.querySelector('#iam4').onclick = function (event) { vars['camera'] = "4"; switchVars(); }
+	document.querySelector('#iam5').onclick = function (event) { vars['camera'] = "5"; switchVars(); }
+
+	var websocket = new WebSocket("ws://192.168.1.1:6789/");
+
+	document.querySelector('#setcam1').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '1' })); }
+	document.querySelector('#setcam2').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '2' })); }
+	document.querySelector('#setcam3').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '3' })); }
+	document.querySelector('#setcam4').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '4' })); }
+	document.querySelector('#setcam5').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '5' })); }
+	document.querySelector('#messageinput').oninput = function (event) {
+		websocket.send(JSON.stringify({type:'messageset', data:document.querySelector('#messageinput').value}))}
+
+	websocket.onmessage = function (event) {
+		data = JSON.parse(event.data);
+		switch (data.type) {
+			case 'setcam':
+				for (let el of document.querySelectorAll('.button')) el.style.backgroundColor = '#444';
+				for (let el of document.querySelectorAll('.selector')) el.style.backgroundColor = '#444';
+				document.querySelector('#setcam' + data.data).style.backgroundColor = 'red';
+				if (vars['camera'] == data.data) {
+					document.querySelector('body').style.backgroundColor = 'red';
+				} else {
+					document.querySelector('body').style.backgroundColor = '#666';
+				};
+				break
+			case 'messageset':
+				document.querySelector('#message').innerHTML = data.data.replace(/\n/g,"<br/>");
+				document.querySelector('#message').style.display = 'block';
+				break;
+			case 'messageclear':
+				document.querySelector('#message').textContent = '';
+				document.querySelector('#message').style.display = 'none';
+				break;
+			default:
+				console.error("Unsupported event", data);
+		}
+	};
+</script>
+
+</html>

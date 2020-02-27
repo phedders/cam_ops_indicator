@@ -38,12 +38,16 @@
 			color: white;
 			opacity: 0.5;
 			font-size: 2rem;
-			display: flex; ;
+			display: flex;
+			;
 		}
 
-		.footer > div { width:50%;  }
+		.footer>div {
+			width: 50%;
+		}
 
-		#login>span,
+		#login>#iamthemaster,
+		#login>span>span,
 		.selector {
 			fonxt-size: 2em;
 			display: flex;
@@ -105,52 +109,41 @@
 
 	<div id="login"> Who are you?
 		<span id='iamthemaster'>The main controller</span>
-		<span id='iam1'>Camera operator 1</span>
-		<span id='iam2'>Camera operator 2</span>
-		<span id='iam3'>Camera operator 3</span>
-		<span id='iam4'>Camera operator 4</span>
-		<span id='iam5'>Camera operator 5</span>
+		<span class='camlist'></span>
 	</div>
 	<div id="master">
-		<div class="selector" id="setcam1">Camera 1</div>
-		<div class="selector" id="setcam2">Camera 2</div>
-		<div class="selector" id="setcam3">Camera 3</div>
-		<div class="selector" id="setcam4">Camera 4</div>
-		<div class="selector" id="setcam5">Camera 5</div>
+		<span class='camlist'></span>
 		<form><textarea id="messageinput"></textarea></form>
 	</div>
 	<div id="message">Message:</div>
-	<div class="footer"><div id='footerL'>waiting...</div><div id='footerR'>waiting...</div></div>
+	<div class="footer">
+		<div id='footerL'>...</div>
+		<div id='footerR'>...</div>
+	</div>
 </body>
 
 <script>
-	var vars = {};
-	var dt=new Date().getTime();
+	var vars = {}; var cams = 4; var maxcams = 10;
+	var dt = new Date().getTime();
 	var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
 		vars[key] = value;
 	});
 	function switchVars() {
 		document.querySelector('#login').style.display = 'none';
-		switch (vars['camera']) {
-			case '1': document.querySelector('#titlename').innerHTML = vars['camera']; break;
-			case '2': document.querySelector('#titlename').innerHTML = vars['camera']; break;
-			case '3': document.querySelector('#titlename').innerHTML = vars['camera']; break;
-			case '4': document.querySelector('#titlename').innerHTML = vars['camera']; break;
-			case '5': document.querySelector('#titlename').innerHTML = vars['camera']; break;
-			case 'master': document.querySelector('#titlename').innerHTML = 'Master'; document.querySelector('#master').style.display = 'block';
-		          console.log("Setting up clock")
-		          setInterval( function() { websocket.send(JSON.stringify( { type:'footer', data: "Master time is: " + new Date().toLocaleTimeString() }))}, 1000 );
-			break;
-			case undefined: document.querySelector('#login').style.display = 'block'; break;
+		if (vars['camera'] == undefined) {
+			document.querySelector('#login').style.display = 'block';
+
+		} else if (0 <= vars['camera'] && vars['camera'] <= maxcams) {
+			document.querySelector('#titlename').innerHTML = vars['camera'];
+		} else if (vars['camera'] <= 'master') {
+			document.querySelector('#titlename').innerHTML = 'Master'; document.querySelector('#master').style.display = 'block';
+			console.log("Setting up clock")
+			setInterval(function () { websocket.send(JSON.stringify({ type: 'footer', data: "Master time is: " + new Date().toLocaleTimeString() })) }, 2000);
 		}
 	}
 
 	document.querySelector('#iamthemaster').onclick = function (event) { vars['camera'] = "master"; switchVars(); }
-	document.querySelector('#iam1').onclick = function (event) { vars['camera'] = "1"; switchVars(); }
-	document.querySelector('#iam2').onclick = function (event) { vars['camera'] = "2"; switchVars(); }
-	document.querySelector('#iam3').onclick = function (event) { vars['camera'] = "3"; switchVars(); }
-	document.querySelector('#iam4').onclick = function (event) { vars['camera'] = "4"; switchVars(); }
-	document.querySelector('#iam5').onclick = function (event) { vars['camera'] = "5"; switchVars(); }
+
 
 	var loc = window.location, new_uri;
 	if (loc.protocol === "https:") {
@@ -158,16 +151,28 @@
 	} else {
 		ws_uri = "ws:";
 	}
-	ws_uri += "//" + loc.host.replace(/:.*/, ":6789"); console.log("Connecting to "+ws_uri);
+	ws_uri += "//" + loc.host.replace(/:.*/, ":6789"); console.log("Connecting to " + ws_uri);
 	var websocket = new WebSocket(ws_uri);
 
 	switchVars();
+	document.querySelector('#login > .camlist').innerHTML = "";
+	document.querySelector('#master > .camlist').innerHTML = "";
 
-	document.querySelector('#setcam1').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '1' })); }
-	document.querySelector('#setcam2').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '2' })); }
-	document.querySelector('#setcam3').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '3' })); }
-	document.querySelector('#setcam4').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '4' })); }
-	document.querySelector('#setcam5').onclick = function (event) { websocket.send(JSON.stringify({ type: 'setcam', data: '5' })); }
+	for (i = 1; i <= cams; i++) {
+		document.querySelector('#login > .camlist').innerHTML += '<span id="iam' + i + '">Camera Operator ' + i + '</span>';
+		document.querySelector('#master > .camlist').innerHTML += '<div class="selector" id="setcam' + i + '">Camera ' + i + '</div>';
+	}
+	for (i = 1; i <= cams; i++) {
+
+		document.querySelector('#iam' + i).onclick = (function (ii) {
+			return function () { console.log("onclick " + ii); vars['camera'] = ii; switchVars(); };
+		})(i);
+
+		document.querySelector('#setcam' + i).onclick = (function (ii) {
+			return function () { console.log("onmaster " + ii); websocket.send(JSON.stringify({ type: 'setcam', data: ii })); };
+		})(i);
+	}
+
 	document.querySelector('#messageinput').oninput = function (event) {
 		websocket.send(JSON.stringify({ type: 'messageset', data: document.querySelector('#messageinput').value }))
 	}
@@ -184,7 +189,7 @@
 				} else {
 					document.querySelector('body').style.backgroundColor = '#666';
 				};
-				document.querySelector('#footerL').textContent = "Active op = "+data.data;
+				document.querySelector('#footerL').textContent = "Active op = " + data.data;
 				break
 			case 'messageset':
 				document.querySelector('#message').innerHTML = data.data.replace(/\n/g, "<br/>");
@@ -194,8 +199,8 @@
 				document.querySelector('#message').textContent = '';
 				document.querySelector('#message').style.display = 'none';
 				break;
-				case 'footer': console.log("got footer "+data.data);
-					document.querySelector('#footerR').textContent = data.data; break;
+			case 'footer': console.log("got footer " + data.data);
+				document.querySelector('#footerR').textContent = data.data; break;
 			default:
 				console.error("Unsupported event", data);
 		}
